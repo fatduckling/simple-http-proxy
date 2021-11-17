@@ -71,7 +71,7 @@ class CurlResponse : private boost::noncopyable {
    */
 
   [[nodiscard]] long get_status_code() const;
-  [[nodiscard]] const CurlData &get_http_response() const;
+  [[nodiscard]] CurlData &get_http_response();
   [[nodiscard]] long get_time_taken() const;
 
  private:

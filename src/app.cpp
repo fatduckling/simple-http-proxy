@@ -65,12 +65,58 @@ void App::on_http_request(App::HttpResponse *res, App::HttpRequest *req) {
   } else {
     CurlResponse response(url);
     if (response) {
-      std::string_view proxyResponse = response.get_http_response().to_string_view();
-      return res->writeStatus(std::to_string(response.get_status_code()).c_str())->end(proxyResponse);
+      CurlData &proxyResponse = response.get_http_response();
+      auto httpBody = proxyResponse.to_string_view();
+      const static bool enableCompression = m_programArguments.enable_compression();
+      if (enableCompression) {
+        long originalHttpBodyLength = httpBody.length();
+        if (compress_http_response(proxyResponse)) {
+          httpBody = proxyResponse.to_string_view();
+          res->writeHeader("Proxy-Compressed-Length", originalHttpBodyLength);
+        } else {
+          SPDLOG_CRITICAL("Failed to compress HTTP response");
+          return res->writeStatus("500")
+              ->writeHeader("Content-Type", "application/json; charset=utf-8")
+              ->end("\"Failed to compress HTTP response!\"");
+        }
+      }
+      return res->writeStatus(std::to_string(response.get_status_code()).c_str())->end(httpBody);
     } else {
       return res->writeStatus("400")
           ->writeHeader("Content-Type", "application/json; charset=utf-8")
           ->end("\"Failed to make GET request!\"");
     }
   }
+}
+
+bool App::compress_http_response(CurlData &httpResponse) {
+  auto httpBody = httpResponse.to_string_view();
+  const char *const src = httpBody.data();
+  const int srcSize = (int) (httpBody.length() + 1);
+  const int maxDestSize = LZ4_compressBound(srcSize);
+  auto *compressedData = (char *) malloc((size_t) maxDestSize);
+  long initialTime = get_timestamp();
+  const size_t compressedDataSize = LZ4_compress_HC(src, compressedData, srcSize, maxDestSize, 12);
+  long timeTaken = get_timestamp() - initialTime;
+  if (compressedDataSize <= 0) {
+    SPDLOG_ERROR("A 0 or negative result from LZ4_compress_default() indicates a failure trying to compress the data.");
+  } else if (compressedDataSize > 0) {
+    float compressRatio = (float) compressedDataSize / (float) srcSize;
+    SPDLOG_INFO(
+        "Successfully compressed the HTTP response! Ratio: {:0.2f}% Original size: {}, New size: {}. Time taken: {} ms",
+        compressRatio, srcSize, compressedDataSize, timeTaken);
+    httpResponse.replace_data(compressedData, compressedDataSize);
+    return true;
+  } else {
+    SPDLOG_ERROR("Compressed data size is zero or negative");
+  }
+  return false;
+}
+
+long App::get_timestamp() {
+  using namespace std::chrono;
+  milliseconds ms = duration_cast<milliseconds>(
+      system_clock::now().time_since_epoch()
+  );
+  return ms.count();
 }

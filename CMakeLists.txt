@@ -23,8 +23,9 @@ add_definitions(-DLIBUS_NO_SSL=1)
 
 # third-party sources
 file(GLOB_RECURSE USOCKETS_SOURCES "third-party/uSockets/*.c" "third-party/uSockets/*.cpp")
-file(GLOB_RECURSE LZO_SOURCES "third-party/lzo/*.c")
+file(GLOB_RECURSE LZO_SOURCES "third-party/lz4/*.c")
+file(GLOB_RECURSE CLI11_SOURCES "third-party/CLI11/CLI11.hpp")
 
-add_executable(simple_http_proxy ${SOURCES} ${USOCKETS_SOURCES} ${LZO_SOURCES})
+add_executable(simple_http_proxy ${SOURCES} ${USOCKETS_SOURCES} ${LZO_SOURCES} ${CLI11_SOURCES})
 
-target_link_libraries(simple_http_proxy curl pthread z boost_program_options)
+target_link_libraries(simple_http_proxy curl pthread z)

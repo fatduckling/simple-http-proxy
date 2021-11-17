@@ -89,7 +89,7 @@ long CurlResponse::get_status_code() const {
   return m_statusCode;
 }
 
-const CurlData &CurlResponse::get_http_response() const {
+CurlData &CurlResponse::get_http_response() {
   return m_httpResponse;
 }
 
