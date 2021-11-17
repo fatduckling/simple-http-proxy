@@ -96,7 +96,7 @@ bool App::compress_http_response(CurlData &httpResponse) {
   const int maxDestSize = LZ4_compressBound(srcSize);
   auto *compressedData = (char *) malloc((size_t) maxDestSize);
   long initialTime = get_timestamp();
-  const size_t compressedDataSize = LZ4_compress_HC(src, compressedData, srcSize, maxDestSize, 12);
+  const size_t compressedDataSize = LZ4_compress_HC(src, compressedData, srcSize, maxDestSize, 4);
   long timeTaken = get_timestamp() - initialTime;
   if (compressedDataSize <= 0) {
     SPDLOG_ERROR("A 0 or negative result from LZ4_compress_default() indicates a failure trying to compress the data.");

@@ -9,7 +9,7 @@ bool ProgramArguments::parse_arguments(int argc, char **argv) {
   CLI::App app{"Allowed options"};
 
   app.add_option("-p,--port", m_port, "the HTTP port to launch the server on")->required(true);
-  app.add_flag("-e,--enable-compression",
+  app.add_option("-e,--enable-compression",
                m_compressBody, "enable compression on the HTTP body with LZ4 compression method to save bandwidth");
 
   try {
