@@ -69,7 +69,7 @@ void App::on_http_request(App::HttpResponse *res, App::HttpRequest *req) {
       auto httpBody = proxyResponse.to_string_view();
       const static bool enableCompression = m_programArguments.enable_compression();
       if (enableCompression) {
-        long originalHttpBodyLength = httpBody.length();
+        unsigned long originalHttpBodyLength = httpBody.length();
         if (compress_http_response(proxyResponse)) {
           httpBody = proxyResponse.to_string_view();
           res->writeHeader("Proxy-Compressed-Length", originalHttpBodyLength);
@@ -80,13 +80,14 @@ void App::on_http_request(App::HttpResponse *res, App::HttpRequest *req) {
               ->end("\"Failed to compress HTTP response!\"");
         }
       }
-      return res->writeStatus(std::to_string(response.get_status_code()).c_str())->end(httpBody);
-    } else {
-      return res->writeStatus("400")
-          ->writeHeader("Content-Type", "application/json; charset=utf-8")
-          ->end("\"Failed to make GET request!\"");
+      char str[20];
+      std::sprintf(str, "%ld", response.get_status_code());
+      return res->writeStatus(str)->end(httpBody);
     }
   }
+  return res->writeStatus("400")
+      ->writeHeader("Content-Type", "application/json; charset=utf-8")
+      ->end("\"Failed to make GET request!\"");
 }
 
 bool App::compress_http_response(CurlData &httpResponse) {

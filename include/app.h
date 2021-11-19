@@ -90,7 +90,7 @@ class App {
    * @param httpResponse contains the HTTP response
    * @return true if the compression was successful, false otherwise
    */
-  [[nodiscard]] bool compress_http_response(CurlData &httpResponse);
+  [[nodiscard]] static bool compress_http_response(CurlData &httpResponse);
 
   /**
    * @return the current unix epoch milliseconds
