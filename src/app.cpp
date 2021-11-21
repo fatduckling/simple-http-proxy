@@ -65,6 +65,12 @@ void App::on_http_request(App::HttpResponse *res, App::HttpRequest *req) {
   } else {
     CurlResponse response(url);
     if (response) {
+
+      // write the http status first
+      char str[20];
+      std::sprintf(str, "%ld", response.get_status_code());
+      res->writeStatus(str);
+
       CurlData &proxyResponse = response.get_http_response();
       auto httpBody = proxyResponse.to_string_view();
       const static bool enableCompression = m_programArguments.enable_compression();
@@ -80,9 +86,7 @@ void App::on_http_request(App::HttpResponse *res, App::HttpRequest *req) {
               ->end("\"Failed to compress HTTP response!\"");
         }
       }
-      char str[20];
-      std::sprintf(str, "%ld", response.get_status_code());
-      return res->writeStatus(str)->end(httpBody);
+      return res->end(httpBody);
     }
   }
   return res->writeStatus("400")
@@ -97,7 +101,7 @@ bool App::compress_http_response(CurlData &httpResponse) {
   const int maxDestSize = LZ4_compressBound(srcSize);
   auto *compressedData = (char *) malloc((size_t) maxDestSize);
   long initialTime = get_timestamp();
-  const size_t compressedDataSize = LZ4_compress_HC(src, compressedData, srcSize, maxDestSize, 4);
+  const size_t compressedDataSize = LZ4_compress_HC(src, compressedData, srcSize, maxDestSize, 1);
   long timeTaken = get_timestamp() - initialTime;
   if (compressedDataSize <= 0) {
     SPDLOG_ERROR("A 0 or negative result from LZ4_compress_default() indicates a failure trying to compress the data.");
